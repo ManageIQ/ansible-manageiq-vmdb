@@ -31,102 +31,33 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = '''
 module: manageiq_vmdb
 '''
+import json
 from ansible.module_utils.basic import AnsibleModule
-
-
-try:
-    from manageiq_client.api import ManageIQClient
-    HAS_CLIENT = True
-except ImportError:
-    HAS_CLIENT = False
-
-
-def check_client(module):
-    if not HAS_CLIENT:
-        module.fail_json(msg='manageiq_client.api is required for this module')
-
-
-def validate_connection_params(module):
-    params = module.params['manageiq_connection']
-    error_str = "missing required argument: manageiq_connection[{}]"
-    url = params['url']
-    token = params.get('token')
-    username = params.get('username')
-    password = params.get('password')
-
-    if (url and username and password) or (url and token):
-        return params
-    for arg in ['url', 'username', 'password']:
-        if params[arg] in (None, ''):
-            module.fail_json(msg=error_str.format(arg))
-
-
-class ManageIQ(object):
-    """
-        class encapsulating ManageIQ API client.
-    """
-
-    def __init__(self, module):
-        # handle import errors
-        check_client(module)
-        params = validate_connection_params(module)
-
-        url = params['url']
-        username = params.get('username')
-        password = params.get('password')
-        token = params.get('token')
-        verify_ssl = params.get('verify_ssl')
-        ca_bundle_path = params.get('ca_bundle_path')
-
-        self._module = module
-        self._api_url = url + '/api'
-        self._auth = dict(user=username, password=password, token=token)
-        try:
-            self._client = ManageIQClient(self._api_url, self._auth, verify_ssl=verify_ssl, ca_bundle_path=ca_bundle_path)
-        except Exception as e:
-            self.module.fail_json(msg="failed to open connection (%s): %s" % (url, str(e)))
-
-    @property
-    def module(self):
-        """ Ansible module module
-
-        Returns:
-            the ansible module
-        """
-        return self._module
-
-    @property
-    def api_url(self):
-        """ Base ManageIQ API
-
-        Returns:
-            the base ManageIQ API
-        """
-        return self._api_url
-
-    @property
-    def client(self):
-        """ ManageIQ client
-
-        Returns:
-            the ManageIQ client
-        """
-        return self._client
-
+from ansible.module_utils.urls import fetch_url
 
 class ManageIQVmdb(object):
     """
         Object to execute VMDB management operations in manageiq.
     """
 
-    def __init__(self, manageiq):
-        self._manageiq = manageiq
-        self._module = self._manageiq.module
-        self._api_url = self._manageiq.api_url
+    def __init__(self, module):
+        self._module = module
+        self._api_url = self._module.params['manageiq_connection']['url'] + '/api'
         self._vmdb = self._module.params.get('vmdb') or self._module.params.get('href')
         self._href = None
-        self._client = self._manageiq.client
         self._error = None
+        self._auth = self._build_auth()
+
+
+    def _build_auth(self):
+        self._headers = {'Content-Type': 'application/json; charset=utf-8'}
+        if self._module.params['manageiq_connection'].get('token'):
+            self._headers["X-Auth-Token"] = self._module.params['manageiq_connection']['token']
+        else:
+            self._module.params['url_username'] = self._module.params['manageiq_connection']['username']
+            self._module.params['url_password'] = self._module.params['manageiq_connection']['password']
+
+
 
 
     @property
@@ -154,8 +85,17 @@ class ManageIQVmdb(object):
             url = alt_url
         else:
             url = self.url
-        result = self._client.get(url)
-        return dict(result)
+        result, _info = fetch_url(self._module, url, None, self._headers, 'get')
+        return json.loads(result.read())
+
+
+    def set(self, post_dict):
+        """
+            Set any attribute, object from the REST API
+        """
+        post_data = json.dumps(dict(action=post_dict['action'], resource=post_dict['resource']))
+        result, _info = fetch_url(self._module, self.url, post_data, self._headers, 'post')
+        return  json.loads(result.read())
 
 
     def parse(self, item):
@@ -203,9 +143,9 @@ class Vmdb(ManageIQVmdb):
         action_string = self._module.params.get('action')
 
         if self.exists(action_string):
-            result = self._client.post(self.post_url, action=action_string, resource=data)
+            result = self.set(dict(action=action_string, resource=data))
             if result['success']:
-                return dict(changed=False, value=result)
+                return dict(changed=True, value=result)
             return self._module.fail_json(msg=result['message'])
         return self._module.fail_json(msg="Action not found")
 
@@ -241,8 +181,7 @@ def main():
             )
 
 
-    manageiq = ManageIQ(module)
-    vmdb = Vmdb(manageiq)
+    vmdb = Vmdb(module)
 
     if module.params.get('action'):
         result = vmdb.action()
