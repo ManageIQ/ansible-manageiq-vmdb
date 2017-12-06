@@ -1,38 +1,128 @@
-Role Name
+manageiq-vmdb
 =========
 
-A brief description of the role goes here.
+The `manageiq-vmdb` role allows for users of ManageIQ to modify and/or change VMDB objects via an Ansible Playbook.
+The role includes a module `manageiq_vmdb` which does all the heavy lifting needed to modify or change objects in the database.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+ManageIQ has to be Gaprindashvili (G Release) or higher.
+
+The example playbook makes use of the `manageiq_vmdb` module which is also included as part of this role.
+
+If you have a requirement to include this Role in Ansible Tower or Embedded Ansible, simply add an empty `roles`
+directory at the root of your playbook and include a `requirements.yml` file with the following contents inside
+that directory:
+
+```
+---
+- src: syncrou.manageiq-vmdb
+```
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Validate Certs:
+    `validate_certs` defaults to `True`.
+    If set to `False` in the `manageiq_connection` dictionary
+    then the lookup will allow self signed certificates
+    to be used when using SSL REST API connection urls.
+
+ManageIQ:
+    `manageiq_connection` is a dictionary with a set of connection defaults in `defaults/main.yml`.
+    Remember to use Ansible Vault for passwords.
+    `automate_workspace` is the guid required to talk to the Automate Workspace.
+
+```
+    manageiq_connection:
+        url: 'http://localhost:3000'
+        username: 'admin'
+        password: 'password'
+        automate_workspace: '1234'
+        validate_certs: false
+```
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+None
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+An example which provisions a VM to EC2. The playbook
+links that vm to a service in the ManageIQ VMDB using the
+`manageiq_vmdb` module.
+The example shows two ways to pass
+the VMDB object to the module, either via an href slug or
+via a variable.
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+```
+- name: Service Linking VM's to an existing service
+  hosts: localhost
+  connection: local
+  gather_facts: False
+
+  vars:
+  - key: db
+  - name: db-test-provision-1
+  - instance_type: t2.nano
+  - security_group: sg-sdf234
+  - image: ami-234234lkj
+  - region: us-east-1
+  - subnet: subnet-adsf098
+  - manageiq_connection:
+      url: 'https://localhost.ssl:3000'
+      username: 'admin'
+      password: 'smartvm'
+      validate_certs: false
+
+  roles:
+  - syncrou.manageiq-vmdb
+
+  tasks:
+  - name: Get a vmdb object
+    manageiq_vmdb:
+      href: "services/80"
+    register: vmdb_object
+
+  - name: Create Ec2 Instance
+    ec2:
+      key_name: "{{ key }}"
+      instance_tags: {Name: "{{ name }}"}
+      group_id: "{{ security_group }}"
+      instance_type: "{{ instance_type }}"
+      region: "{{ region }}"
+      image: "{{ image }}"
+      wait: yes
+      count: 1
+      vpc_subnet_id: "{{ subnet }}"
+      assign_public_ip: yes
+    register: ec2
+
+  - name: Service Linking via an href slug
+    manageiq_vmdb:
+      href: "href_slug::services/80"
+      action: add_provider_vms
+      data:
+        uid_ems:
+          - "{{ ec2.instances[0].id }}"
+        provider:
+          id: 24
+
+  - name: Service Linking via an object
+    manageiq_vmdb:
+      vmdb: "{{ vmdb_object }}"
+      action: add_provider_vms
+      data:
+        uid_ems:
+          - "asdf234"
+        provider:
+          id: 24
+```
 
 License
 -------
 
-BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Apache
