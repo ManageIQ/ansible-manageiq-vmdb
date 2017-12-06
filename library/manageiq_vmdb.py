@@ -51,6 +51,10 @@ class ManageIQVmdb(object):
 
     def _build_auth(self):
         self._headers = {'Content-Type': 'application/json; charset=utf-8'}
+        self._module.params['validate_certs'] = self._module.params['manageiq_connection']['validate_certs']
+        self._module.params['force_basic_auth'] = self._module.params['manageiq_connection']['force_basic_auth']
+        self._module.params['client_cert'] = self._module.params['manageiq_connection']['client_cert']
+        self._module.params['client_key'] = self._module.params['manageiq_connection']['client_key']
         if self._module.params['manageiq_connection'].get('token'):
             self._headers["X-Auth-Token"] = self._module.params['manageiq_connection']['token']
         else:
@@ -159,8 +163,10 @@ def manageiq_argument_spec():
         automate_workspace=dict(default=None, type='str', no_log=True),
         group=dict(default=None, type='str'),
         X_MIQ_Group=dict(default=None, type='str'),
-        verify_ssl=dict(default=True, type='bool'),
-        ca_bundle_path=dict(required=False, default=None),
+        validate_certs=dict(required=False, type='bool', default=True),
+        force_basic_auth=dict(required=False, type='bool', default='no'),
+        client_cert=dict(required=False, type='path', default=None),
+        client_key=dict(required=False, type='path', default=None)
     )
 
 

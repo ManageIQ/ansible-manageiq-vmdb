@@ -1,6 +1,1 @@
 ---
-- name: "Install Required Modules"
-  pip:
-    name: "{{ item }}"
-  with_items:
-    - git+https://github.com/syncrou/manageiq-api-client-python.git#egg=manageiq_client

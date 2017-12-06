@@ -34,35 +34,32 @@ MANAGEIQ_MODULE_VARS = ('username',
                         'url',
                         'token',
                         'group',
-                        'automate_workspace',
-                        'X_MIQ_Group')
+                        'X_MIQ_Group',
+                        'validate_certs',
+                        'force_basic_auth',
+                        'client_cert',
+                        'client_key')
 
 
 class ActionModule(ActionBase):
 
     def manageiq_extra_vars(self, module_vars, task_vars):
+        if 'manageiq_connection' in task_vars.keys():
+            module_vars['manageiq_connection'] = task_vars['manageiq_connection']
         if 'manageiq' not in task_vars.keys():
             return module_vars
 
-        verify_ssl = None
-        ca_bundle_path = None
 
         if 'manageiq_connection' not in module_vars.keys() or module_vars['manageiq_connection'] is None:
             module_vars['manageiq_connection'] = dict()
-        if 'verify_ssl' in module_vars['manageiq_connection'].keys():
-            verify_ssl = module_vars['manageiq_connection'].pop('verify_ssl', None)
-        if 'ca_bundle_path' in module_vars['manageiq_connection'].keys():
-            ca_bundle_path = module_vars['manageiq_connection'].pop('ca_bundle_path', None)
 
         for k in MANAGEIQ_MODULE_VARS:
-            if k not in module_vars['manageiq_connection']:
+            if k not in module_vars['manageiq_connection'].keys():
                 try:
                     module_vars['manageiq_connection'][k] = task_vars['manageiq'][k]
                 except KeyError:
                     pass
 
-        module_vars['manageiq_connection']['verify_ssl'] = verify_ssl
-        module_vars['manageiq_connection']['ca_bundle_path'] = ca_bundle_path
 
         return module_vars
 
