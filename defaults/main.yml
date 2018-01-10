@@ -4,4 +4,3 @@ manageiq_connection:
   url: "https://localhost.ssl:3000"
   username: "admin"
   password: "smartvm"
-  validate_certs: false
