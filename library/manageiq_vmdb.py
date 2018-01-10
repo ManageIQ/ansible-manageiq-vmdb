@@ -52,10 +52,9 @@ class ManageIQVmdb(object):
     def _build_auth(self):
         self._headers = {'Content-Type': 'application/json; charset=utf-8'}
         # Force CERT validation to work with fetch_url
-        self._module.params['validate_certs'] = self._module.params['manageiq_connection']['validate_certs']
-        self._module.params['force_basic_auth'] = self._module.params['manageiq_connection']['force_basic_auth']
-        self._module.params['client_cert'] = self._module.params['manageiq_connection']['client_cert']
-        self._module.params['client_key'] = self._module.params['manageiq_connection']['client_key']
+        self._module.params['validate_certs'] = self._module.params['manageiq_connection']['manageiq_validate_certs']
+        for cert in ('force_basic_auth', 'client_cert', 'client_key'):
+            self._module.params[cert] = self._module.params['manageiq_connection'][cert]
         if self._module.params['manageiq_connection'].get('token'):
             self._headers["X-Auth-Token"] = self._module.params['manageiq_connection']['token']
         else:
@@ -118,6 +117,7 @@ class ManageIQVmdb(object):
 
 
     def exists(self, path):
+        # Need to validate all urls that come in
         """
             Validate all passed objects before attempting to set or get values from them
         """
@@ -164,7 +164,7 @@ def manageiq_argument_spec():
         automate_workspace=dict(default=None, type='str', no_log=True),
         group=dict(default=None, type='str'),
         X_MIQ_Group=dict(default=None, type='str'),
-        validate_certs=dict(required=False, type='bool', default=True),
+        manageiq_validate_certs=dict(required=False, type='bool', default=True),
         force_basic_auth=dict(required=False, type='bool', default='no'),
         client_cert=dict(required=False, type='path', default=None),
         client_key=dict(required=False, type='path', default=None)

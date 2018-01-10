@@ -24,7 +24,7 @@ Role Variables
 --------------
 
 Validate Certs:
-    `validate_certs` defaults to `True`.
+    `manageiq_validate_certs` defaults to `True`.
     If set to `False` in the `manageiq_connection` dictionary
     then the lookup will allow self signed certificates
     to be used when using SSL REST API connection urls.
@@ -40,7 +40,7 @@ ManageIQ:
         username: 'admin'
         password: 'password'
         automate_workspace: '1234'
-        validate_certs: false
+        manageiq_validate_certs: false
 ```
 
 Dependencies
@@ -76,7 +76,7 @@ via a variable.
       url: 'https://localhost.ssl:3000'
       username: 'admin'
       password: 'smartvm'
-      validate_certs: false
+      manageiq_validate_certs: false
 
   roles:
   - syncrou.manageiq-vmdb

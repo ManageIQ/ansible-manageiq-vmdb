@@ -35,7 +35,7 @@ MANAGEIQ_MODULE_VARS = ('username',
                         'token',
                         'group',
                         'X_MIQ_Group',
-                        'validate_certs',
+                        'manageiq_validate_certs',
                         'force_basic_auth',
                         'client_cert',
                         'client_key')
@@ -46,6 +46,8 @@ class ActionModule(ActionBase):
     def manageiq_extra_vars(self, module_vars, task_vars):
         if 'manageiq_connection' in task_vars.keys():
             module_vars['manageiq_connection'] = task_vars['manageiq_connection']
+        if 'manageiq_validate_certs' in task_vars.keys():
+            module_vars['manageiq_connection']['manageiq_validate_certs'] = task_vars.get('manageiq_validate_certs')
         if 'manageiq' not in task_vars.keys():
             return module_vars
 
