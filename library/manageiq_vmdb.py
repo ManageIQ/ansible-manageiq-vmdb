@@ -34,6 +34,7 @@ module: manageiq_vmdb
 import json
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
+from ansible.module_utils.six.moves.urllib.parse import urlparse
 
 class ManageIQVmdb(object):
     """
@@ -42,6 +43,7 @@ class ManageIQVmdb(object):
 
     def __init__(self, module):
         self._module = module
+        self._debug = bool(self._module._verbosity >= 3)
         self._api_url = self._module.params['manageiq_connection']['url'] + '/api'
         self._vmdb = self._module.params.get('vmdb') or self._module.params.get('href')
         self._href = None
@@ -69,28 +71,37 @@ class ManageIQVmdb(object):
         """
             The url to connect to the VMDB Object
         """
-        return self._api_url
+        return self.build_url()
 
-    @property
-    def post_url(self):
+
+    def build_url(self):
         """
-            The url to connect to the vmdb
+            Using any type of href input, build out the correct url
         """
-        if self._href:
-            return self._api_url + '/' + self._href
-        return self._api_url
+
+        url_actual = urlparse(self._href)
+        return self._api_url + url_actual.path
+
+    def build_result(self, method, data=None):
+        """
+            Make the REST call and return the result to the caller
+        """
+        result, info = fetch_url(self._module, self.url, data, self._headers, method)
+        try:
+            vmdb = json.loads(result.read())
+            if self._debug:
+                vmdb['debug'] = info
+                return vmdb
+        except AttributeError:
+            self._module.fail_json(msg=info)
+        return json.loads(result.read())
 
 
-    def get(self, alt_url=None):
+    def get(self):
         """
             Get any attribute, object from the REST API
         """
-        if alt_url:
-            url = alt_url
-        else:
-            url = self.url
-        result, _info = fetch_url(self._module, url, None, self._headers, 'get')
-        return json.loads(result.read())
+        return self.build_result('get')
 
 
     def set(self, post_dict):
@@ -98,8 +109,7 @@ class ManageIQVmdb(object):
             Set any attribute, object from the REST API
         """
         post_data = json.dumps(dict(action=post_dict['action'], resource=post_dict['resource']))
-        result, _info = fetch_url(self._module, self.url, post_data, self._headers, 'post')
-        return  json.loads(result.read())
+        return self.build_result('post', post_data)
 
 
     def parse(self, item):
@@ -107,7 +117,7 @@ class ManageIQVmdb(object):
             Read what is passed in and set the _href instance variable
         """
         if isinstance(item, dict):
-            self._api_url = self._vmdb['href']
+            self._href = self._vmdb['href']
         elif isinstance(item, str):
             slug = item.split("::")
             if len(slug) == 2:
@@ -117,11 +127,10 @@ class ManageIQVmdb(object):
 
 
     def exists(self, path):
-        # Need to validate all urls that come in
         """
             Validate all passed objects before attempting to set or get values from them
         """
-        result = self.get(self.post_url)
+        result = self.get()
         actions = [d['name'] for d in result['actions']]
         return bool(path in actions)
 
@@ -136,7 +145,7 @@ class Vmdb(ManageIQVmdb):
             Return the VMDB Object
         """
         self.parse(self._vmdb)
-        return dict(self.get(self.post_url))
+        return dict(self.get())
 
 
     def action(self):
@@ -149,7 +158,7 @@ class Vmdb(ManageIQVmdb):
 
         if self.exists(action_string):
             result = self.set(dict(action=action_string, resource=data))
-            if result['success']:
+            if result or result['success']:
                 return dict(changed=True, value=result)
             return self._module.fail_json(msg=result['message'])
         return self._module.fail_json(msg="Action not found")
