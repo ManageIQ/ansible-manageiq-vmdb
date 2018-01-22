@@ -32,6 +32,7 @@ DOCUMENTATION = '''
 module: manageiq_vmdb
 '''
 import json
+import re
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import fetch_url
 from ansible.module_utils.six.moves.urllib.parse import urlparse
@@ -44,7 +45,7 @@ class ManageIQVmdb(object):
     def __init__(self, module):
         self._module = module
         self._debug = bool(self._module._verbosity >= 3)
-        self._api_url = self._module.params['manageiq_connection']['url'] + '/api'
+        self._api_url = self._module.params['manageiq_connection']['url']
         self._vmdb = self._module.params.get('vmdb') or self._module.params.get('href')
         self._href = None
         self._error = None
@@ -80,7 +81,10 @@ class ManageIQVmdb(object):
         """
 
         url_actual = urlparse(self._href)
-        return self._api_url + url_actual.path
+        if re.search('api', url_actual.path):
+            return self._api_url + url_actual.path
+        return self._api_url + '/api' + url_actual.path
+
 
     def build_result(self, method, data=None):
         """
