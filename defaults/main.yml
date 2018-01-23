@@ -1,6 +1,2 @@
 ---
-auto_commit: False
-manageiq_connection:
-  url: "https://localhost.ssl:3000"
-  username: "admin"
-  password: "smartvm"
+# Set defaults here if needed

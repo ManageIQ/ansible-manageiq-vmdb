@@ -30,16 +30,17 @@ Validate Certs:
     to be used when using SSL REST API connection urls.
 
 ManageIQ:
-    `manageiq_connection` is a dictionary with a set of connection defaults in `defaults/main.yml`.
+    `manageiq_connection` is a dictionary with connection default keys.
+    Use of this connection information is ONLY needed if the role is used outside of a ManageIQ
+    appliance. A ManageIQ appliance passes in `manageiq_connection` via `extra_vars` so connection
+    information is included automatically.
     Remember to use Ansible Vault for passwords.
-    `automate_workspace` is the guid required to talk to the Automate Workspace.
 
 ```
     manageiq_connection:
         url: 'http://localhost:3000'
         username: 'admin'
         password: 'password'
-        automate_workspace: '1234'
         manageiq_validate_certs: false
 ```
 
@@ -72,6 +73,7 @@ via a variable.
   - image: ami-234234lkj
   - region: us-east-1
   - subnet: subnet-adsf098
+  # Only needed if this playbook is NOT run on a ManageIQ Appliance
   - manageiq_connection:
       url: 'https://localhost.ssl:3000'
       username: 'admin'
