@@ -83,7 +83,7 @@ class ManageIQVmdb(object):
         url_actual = urlparse(self._href)
         if re.search('api', url_actual.path):
             return self._api_url + url_actual.path
-        return self._api_url + '/api' + url_actual.path
+        return self._api_url + '/api/' + url_actual.path
 
 
     def build_result(self, method, data=None):
