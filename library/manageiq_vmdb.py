@@ -95,7 +95,7 @@ class ManageIQVmdb(object):
             vmdb = json.loads(result.read())
             if self._debug:
                 vmdb['debug'] = info
-                return vmdb
+            return vmdb
         except AttributeError:
             self._module.fail_json(msg=info)
         return json.loads(result.read())
