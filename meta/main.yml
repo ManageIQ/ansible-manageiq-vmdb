@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   role_name: manageiq_vmdb
-  description: "Ansible role to modify the ManageIQ automate workspace"
+  description: "Ansible role to query and modify ManageIQ vmdb objects"
   author: "ManageIQ Authors"
   license: license (Apache)
   min_ansible_version: 2.2
