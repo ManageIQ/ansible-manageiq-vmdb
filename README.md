@@ -1,5 +1,7 @@
-manageiq.ansible_manageiq_vmdb
+manageiq.manageiq_vmdb
 =========
+
+https://galaxy.ansible.com/manageiq/manageiq_vmdb
 
 The `manageiq_vmdb` role allows for users of ManageIQ to modify and/or change VMDB objects via an Ansible Playbook.
 The role includes a module `manageiq_vmdb` which does all the heavy lifting needed to modify or change objects in the database.
@@ -17,7 +19,7 @@ that directory:
 
 ```
 ---
-- source: manageiq.ansible_manageiq_vmdb
+- source: manageiq.manageiq_vmdb
 ```
 
 Role Variables
@@ -81,7 +83,7 @@ via a variable.
       manageiq_validate_certs: false
 
   roles:
-  - manageiq.ansible_manageiq_vmdb
+  - manageiq.manageiq_vmdb
 
   tasks:
   - name: Get a vmdb object
