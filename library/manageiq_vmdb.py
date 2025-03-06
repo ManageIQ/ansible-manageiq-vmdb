@@ -92,13 +92,17 @@ class ManageIQVmdb(object):
         """
         result, info = fetch_url(self._module, self.url, data, self._headers, method)
         try:
+            if info["status"] >= 400:
+                error = json.loads(info["body"])
+                self._module.fail_json(msg=error)
+
             vmdb = json.loads(result.read())
             if self._debug:
                 vmdb['debug'] = info
+
             return vmdb
-        except AttributeError:
+        except (json.decoder.JSONDecodeError, AttributeError):
             self._module.fail_json(msg=info)
-        return json.loads(result.read())
 
 
     def get(self):
