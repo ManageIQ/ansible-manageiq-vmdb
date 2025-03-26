@@ -19,8 +19,8 @@ that directory:
 
 ```
 ---
-- source: manageiq.manageiq_vmdb
-  version: v1.0
+- name: manageiq.manageiq_vmdb
+  version: v1.0.0
 ```
 
 Role Variables
