@@ -1,5 +1,6 @@
 ---
-- hosts: localhost
+- name: Test playbook for manageiq.manageiq_vmdb
+  hosts: localhost
   remote_user: root
   roles:
     - manageiq.manageiq_vmdb
